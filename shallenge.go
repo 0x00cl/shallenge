@@ -34,13 +34,15 @@ License GPLv3: GNU GPL version 3 <https://gnu.org/licenses/gpl.html>.
 This is free software: you are free to change and redistribute it.
 This program comes with ABSOLUTELY NO WARRANTY.
 `
-	string_length = 18
+	string_length = 14
 	letter_bytes  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/"
 )
 
-var initial_string = "0x00cl/"
-var suffix_string string
-var worker_count int
+var (
+	username      string
+	suffix_string string
+	worker_count  int
+)
 
 func generate_random_string() string {
 	b := make([]byte, string_length)
@@ -55,7 +57,7 @@ func worker(wg *sync.WaitGroup, result_chan chan<- string, lowest_hash *string, 
 
 	for {
 		random_string := generate_random_string()
-		string_to_hash := initial_string + random_string
+		string_to_hash := username + random_string
 		hash := sha256.Sum256([]byte(string_to_hash))
 		hash_string := hex.EncodeToString(hash[:])
 		lowest_hash_mutex.Lock()
@@ -69,8 +71,9 @@ func worker(wg *sync.WaitGroup, result_chan chan<- string, lowest_hash *string, 
 }
 
 func init() {
-	flag.StringVar(&suffix_string, "p", "i5+8250U/Hello+HN/", "String to add as suffix to the random generated word")
-	flag.IntVar(&worker_count, "n", 8, "Number of workers to spawn")
+	flag.StringVar(&username, "u", "0x00cl", "HN Username")
+	flag.StringVar(&suffix_string, "p", "Hello+HN", "String to add after the username")
+	flag.IntVar(&worker_count, "n", 4, "Number of workers to spawn")
 }
 
 func main() {
@@ -91,10 +94,10 @@ func main() {
 
 	var wg sync.WaitGroup
 	result_chan := make(chan string)
-	lowest_hash := "00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+	lowest_hash := "000000fffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 	var lowest_hash_mutex sync.Mutex
 
-	initial_string = initial_string + suffix_string
+	username = username + "/" + suffix_string + "/"
 	for i := 0; i < worker_count; i++ {
 		wg.Add(1)
 		go worker(&wg, result_chan, &lowest_hash, &lowest_hash_mutex)
